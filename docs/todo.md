@@ -35,8 +35,8 @@ The critical path is **data model → ingestion → retrieval → LLM → citati
 Goal: a running FastAPI service with a migrated Supabase schema.
 
 - [x] Init backend deps and project layout ([backend-setup](guides/backend-setup.md))
-- [ ] `app/config.py` — settings module, fail fast on missing env vars
-- [ ] `app/main.py` — FastAPI app, CORS, health check (`GET /health`)
+- [x] `app/config.py` — settings module, fail fast on missing env vars
+- [x] `app/main.py` — FastAPI app, CORS, health check (`GET /health`)
 - [ ] SQLAlchemy models in `app/database/models/`:
   - [ ] `users`
   - [ ] `source_documents`
@@ -52,7 +52,7 @@ Goal: a running FastAPI service with a migrated Supabase schema.
   - [ ] RLS policies (users see only their own chats)
 - [ ] `uv run alembic upgrade head` against Supabase direct connection
 - [ ] `app/database/supabase.py` — user-scoped and service-role clients
-- [ ] Verify: `uv run uvicorn app.main:app --reload` → health check returns 200
+- [x] Verify: `uv run uvicorn app.main:app --reload` → health check returns 200
 
 ---
 
