@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.api.auth import router as auth_router
+from app.api.chat import router as chat_router
 
 app = FastAPI(
     title="AI Co-Analyst Backend",
@@ -20,6 +21,7 @@ app.add_middleware(
 
 # Register routers
 app.include_router(auth_router)
+app.include_router(chat_router)
 
 @app.get("/health", status_code=200)
 async def health_check():
