@@ -1,5 +1,4 @@
 import asyncio
-import json
 from uuid import UUID
 
 import anyio
@@ -166,21 +165,17 @@ async def chat_stream(
         )
 
     async def generate():
-        """Emit AI SDK Data Stream Protocol lines."""
+        """Emit plain text chunks for TextStreamChatTransport."""
         words = STUB_REPLY.split(" ")
         for i, word in enumerate(words):
             chunk = word if i == 0 else f" {word}"
-            # 0: prefix = text delta in AI SDK Data Stream Protocol
-            yield f'0:{json.dumps(chunk)}\n'
+            yield chunk
             await asyncio.sleep(0.03)
-
-        # Finish and done events
-        yield f'e:{json.dumps({"finishReason": "stop", "usage": {"promptTokens": 0, "completionTokens": 0}})}\n'
-        yield f'd:{json.dumps({"finishReason": "stop"})}\n'
 
         # Persist the full assistant message after streaming
         await anyio.to_thread.run_sync(
             _db_add_message, body.threadId, "assistant", STUB_REPLY, db
         )
 
-    return StreamingResponse(generate(), media_type="text/event-stream")
+    return StreamingResponse(generate(), media_type="text/plain; charset=utf-8")
+
