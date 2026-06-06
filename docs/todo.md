@@ -62,12 +62,12 @@ Goal: analysts can sign in with email; backend rejects unauthenticated requests.
 
 **Backend**
 
-- [ ] `app/auth/dependencies.py` — verify `Authorization: Bearer <supabase_jwt>`, expose `get_current_user`
-- [ ] Reject missing/expired tokens with `401` before any chat or retrieval work
+- [x] `app/auth/dependencies.py` — verify `Authorization: Bearer <supabase_jwt>`, expose `get_current_user`
+- [x] Reject missing/expired tokens with `401` before any chat or retrieval work
 
 **Frontend**
 
-- [ ] Scaffold Vite + React + TypeScript + Tailwind + shadcn ([frontend-setup](guides/frontend-setup.md))
+- [x] Scaffold Vite + React + TypeScript + Tailwind + shadcn ([frontend-setup](guides/frontend-setup.md))
 - [ ] `src/lib/env.ts` — validate `VITE_API_BASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 - [ ] `src/lib/supabase.ts` — browser Supabase client
 - [ ] `src/lib/http.ts` + `src/lib/api.ts` — fetch wrapper with automatic bearer token
