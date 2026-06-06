@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 
 export function Login() {
   const { user, loading } = useAuth();
@@ -10,11 +11,9 @@ export function Login() {
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
   
   const [actionLoading, setActionLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // If session is already established, redirect to home
   if (loading) {
@@ -43,34 +42,42 @@ export function Login() {
 
     setActionLoading(true);
     setErrorMsg(null);
-    setSuccessMsg(null);
 
     try {
-      if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-        });
+      // 1. Authenticate with Supabase
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-        if (error) {
-          throw error;
-        }
-
-        setSuccessMsg(
-          "Registration completed! Check your email for verification if email confirmation is enabled on the server, or sign in now."
-        );
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) {
-          throw error;
-        }
-
-        navigate("/", { replace: true });
+      if (authError) {
+        throw authError;
       }
+
+      const token = data.session?.access_token;
+      if (!token) {
+        throw new Error("No session token was returned from sign-in.");
+      }
+
+      // 2. Synchronize user session and create DB profile entry on the backend
+      try {
+        await api.post("/auth/sync", undefined, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      } catch (syncErr: unknown) {
+        // If profile creation fails, sign the user out to prevent half-logged-in states
+        await supabase.auth.signOut();
+        const err = syncErr as Error;
+        throw new Error(
+          `Profile synchronization failed: ${err.message || "Unable to register user profile in the database."}`,
+          { cause: syncErr }
+        );
+      }
+
+      // 3. Navigate to Dashboard
+      navigate("/", { replace: true });
     } catch (err: unknown) {
       const error = err as Error;
       setErrorMsg(error.message || "An error occurred during authentication.");
@@ -107,51 +114,11 @@ export function Login() {
           </p>
         </div>
 
-        {/* Category Tab Toggle */}
-        <div className="mb-6 flex p-1 bg-surface-soft rounded-md border border-hairline-soft">
-          <button
-            type="button"
-            className={`flex-1 py-2 text-xs uppercase tracking-wider font-medium rounded-md transition-all ${
-              !isSignUp
-                ? "bg-canvas text-ink"
-                : "text-muted hover:text-ink"
-            }`}
-            onClick={() => {
-              setIsSignUp(false);
-              setErrorMsg(null);
-              setSuccessMsg(null);
-            }}
-          >
-            Sign In
-          </button>
-          <button
-            type="button"
-            className={`flex-1 py-2 text-xs uppercase tracking-wider font-medium rounded-md transition-all ${
-              isSignUp
-                ? "bg-canvas text-ink"
-                : "text-muted hover:text-ink"
-            }`}
-            onClick={() => {
-              setIsSignUp(true);
-              setErrorMsg(null);
-              setSuccessMsg(null);
-            }}
-          >
-            Register
-          </button>
-        </div>
-
         {/* Messages */}
         {errorMsg && (
           <div className="mb-6 border border-error/20 bg-error/10 px-4 py-3 rounded-md text-xs text-error font-sans flex items-start gap-2">
-            <span className="font-bold uppercase tracking-wider">Error:</span>
+            <span className="font-bold uppercase tracking-wider flex-shrink-0">Error:</span>
             <span>{errorMsg}</span>
-          </div>
-        )}
-        {successMsg && (
-          <div className="mb-6 border border-success/20 bg-success/10 px-4 py-3 rounded-md text-xs text-success font-sans flex items-start gap-2">
-            <span className="font-bold uppercase tracking-wider">Success:</span>
-            <span>{successMsg}</span>
           </div>
         )}
 
@@ -200,7 +167,7 @@ export function Login() {
             disabled={actionLoading}
             className="w-full mt-2 h-10 text-sm font-medium tracking-normal"
           >
-            {actionLoading ? "Processing..." : isSignUp ? "Create Account" : "Sign In"}
+            {actionLoading ? "Signing In..." : "Sign In"}
           </Button>
         </form>
       </div>

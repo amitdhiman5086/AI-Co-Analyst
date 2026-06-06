@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
+from app.api.auth import router as auth_router
 
 app = FastAPI(
     title="AI Co-Analyst Backend",
@@ -17,6 +18,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Register routers
+app.include_router(auth_router)
+
 @app.get("/health", status_code=200)
 async def health_check():
     """
@@ -24,6 +28,7 @@ async def health_check():
     """
     return {"status": "ok"}
 
+# Trigger reload with new env vars
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
